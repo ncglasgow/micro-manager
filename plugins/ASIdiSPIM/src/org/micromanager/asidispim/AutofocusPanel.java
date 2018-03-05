@@ -61,6 +61,7 @@ public class AutofocusPanel extends ListeningJPanel{
    private final JSpinner maxOffsetChangeSetupSpinner_;
    private final JLabel maxOffsetChangeSetupLabel2_;
    private final JSpinner eachNTimePointsSpinner_;
+   private final JSpinner correctMEachNTimePointsSpinner_;
    
    public AutofocusPanel(final ScriptInterface gui, final Devices devices, 
            final Properties props, final Prefs prefs, 
@@ -68,9 +69,9 @@ public class AutofocusPanel extends ListeningJPanel{
       
       super(MyStrings.PanelNames.AUTOFOCUS.toString(),
               new MigLayout(
-              "",
-              "[center]8[center]",
-              "[]16[]16[]"));
+              "flowy",
+              "[center]16[center]",
+              "[top]8[top]8[top]" ) );
       prefs_ = prefs;
       props_ = props;
       devices_ = devices;
@@ -82,7 +83,7 @@ public class AutofocusPanel extends ListeningJPanel{
             "",
             "[right]16[left]",
             "[]8[]"));
-      optionsPanel.setBorder(PanelUtils.makeTitledBorder("General Options"));
+      optionsPanel.setBorder(PanelUtils.makeTitledBorder("General Autofocus Options"));
       
       // show images checkbox
       final JCheckBox showImagesCheckBox = pu.makeCheckBox("Show images",
@@ -164,7 +165,7 @@ public class AutofocusPanel extends ListeningJPanel{
             "[right]8[center]8[left]",
             "[]8[]"));
       acqOptionsPanel.setBorder(PanelUtils.makeTitledBorder(
-              "Options During Acquisition"));
+              "Autofocus Options During Acquisition"));
       
       // whether or not to run autofocus at the start of the acquisition
       final JCheckBox beforeStartCheckBox = pu.makeCheckBox("Autofocus before starting acquisition",
@@ -188,7 +189,7 @@ public class AutofocusPanel extends ListeningJPanel{
               Devices.Keys.PLUGIN, Properties.Keys.PLUGIN_AUTOFOCUS_CHANNEL, "");
       // make sure to explicitly set it to something so pref gets written
       channelSelect.setSelectedIndex(channelSelect.getSelectedIndex());
-      acqOptionsPanel.add(new JLabel("Autofocus Channel: "));
+      acqOptionsPanel.add(new JLabel("Autofocus channel: "));
       acqOptionsPanel.add(channelSelect, "left, span 2, wrap");
       
       acqOptionsPanel.add(new JLabel("Max offset change:"));
@@ -203,7 +204,7 @@ public class AutofocusPanel extends ListeningJPanel{
             "[right]8[center]8[left]",
             "[]8[]"));
       setupOptionsPanel.setBorder(PanelUtils.makeTitledBorder(
-              "Options During Setup"));
+              "Autofocus Options During Setup"));
 
       autoUpdateOffset_ = pu.makeCheckBox("Automatically update offset if focus found",
             Properties.Keys.PLUGIN_AUTOFOCUS_AUTOUPDATE_OFFSET, panelName_, false);
@@ -231,12 +232,51 @@ public class AutofocusPanel extends ListeningJPanel{
          }
       });
       
+      final JPanel movementCorrectionsPanel = new JPanel(new MigLayout(
+            "",
+            "[right]8[center]8[left]",
+            "[]8[]"));
+      movementCorrectionsPanel.setBorder(PanelUtils.makeTitledBorder(
+              "Movement correction options"));
+      
+      // autofocus every nth image
+      movementCorrectionsPanel.add(new JLabel("Correct every "));
+      correctMEachNTimePointsSpinner_ = pu.makeSpinnerInteger(1, 1000,
+            Devices.Keys.PLUGIN,
+            Properties.Keys.PLUGIN_AUTOFOCUS_CORRECTMOVEMENT_EACHNIMAGES, 10);
+      movementCorrectionsPanel.add(correctMEachNTimePointsSpinner_);
+      movementCorrectionsPanel.add(new JLabel( "time points"), "wrap");
+      
+      // correct movement using this channel
+      // TODO: need to update combobox when the channel group changes
+      final JComboBox channelSelectCM = pu.makeDropDownBox(channels.toArray(), 
+              Devices.Keys.PLUGIN, Properties.Keys.PLUGIN_AUTOFOCUS_CORRECTMOVEMENT_CHANNEL, "");
+      // make sure to explicitly set it to something so pref gets written
+      channelSelectCM.setSelectedIndex(channelSelectCM.getSelectedIndex());
+      movementCorrectionsPanel.add(new JLabel("Channel: "));
+      movementCorrectionsPanel.add(channelSelectCM, "left, span 2, wrap");
+            
+      movementCorrectionsPanel.add(new JLabel("Max distance:"));
+      final JSpinner maxMovementChangeSpinner = pu.makeSpinnerFloat(1, 100, 1,
+            Devices.Keys.PLUGIN,
+            Properties.Keys.PLUGIN_AUTOFOCUS_CORRECTMOVEMENT_MAXCHANGE, 25);
+      movementCorrectionsPanel.add(maxMovementChangeSpinner);
+      movementCorrectionsPanel.add(new JLabel("\u00B5m (\u00B1)"), "left, wrap");
+                      
+      movementCorrectionsPanel.add(new JLabel("Min movement:"));
+      final JSpinner minMovementChangeSpinner = pu.makeSpinnerFloat(0, 10, 0.5,
+            Devices.Keys.PLUGIN,
+            Properties.Keys.PLUGIN_AUTOFOCUS_CORRECTMOVEMENT_MINCHANGE, 1);
+      movementCorrectionsPanel.add(minMovementChangeSpinner);
+      movementCorrectionsPanel.add(new JLabel("\u00B5m (\u00B1)"), "left, wrap");
+      
       
       // construct the main panel
-      add(optionsPanel);
-      add(acqOptionsPanel);
-      add(setupOptionsPanel);
-   }//constructor
+      super.add(optionsPanel, "wrap");
+      super.add(acqOptionsPanel, "flowy, split 2");
+      super.add(setupOptionsPanel, "wrap");
+      super.add(movementCorrectionsPanel);
+   }  //constructor
    
    
    // not using the pref code for now, but now at least we have a way to refer
